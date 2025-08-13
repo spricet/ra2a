@@ -290,7 +290,9 @@ pub struct AgentCardSignature {
 
 impl Security {
     pub fn empty() -> Self {
-        Self::default()
+        Self {
+            schemes: Default::default(),
+        }
     }
 
     pub fn with_scheme(
@@ -453,7 +455,7 @@ impl prost::Message for TransportProtocol {
 
 #[cfg(test)]
 mod serde_tests {
-    use crate::core::agent::{AgentCard, sample_agent_card};
+    use crate::core::agent::{sample_agent_card, AgentCard};
 
     #[test]
     fn spec_example_serde() {
