@@ -1,0 +1,18 @@
+[package]
+name = "ra2a"
+version = "0.1.0"
+authors = ["stp041@gmail.com"]
+edition = "2024"
+
+[dependencies]
+bytes = { workspace = true }
+derive_builder = { workspace = true }
+prost = { workspace = true, optional = true }
+prost-types = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+
+[features]
+grpc = ["prost"]

@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = ["ra2a"]
+
+[workspace.dependencies]
+bytes = { version = "1" }
+derive_builder = { version = "0.20" }
+prost = { version = "0.14" }
+prost-types = { version = "0.14" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
