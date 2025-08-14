@@ -13,6 +13,7 @@ http = { workspace = true }
 http-body = { workspace = true }
 http-body-util = { workspace = true }
 hyper = { workspace = true }
+jsonrpsee = { workspace = true }
 prost = { workspace = true, optional = true }
 prost-types = { workspace = true }
 serde = { workspace = true }
@@ -27,3 +28,4 @@ tokio = { workspace = true }
 
 [features]
 grpc = ["prost", "tonic"]
+server = ["jsonrpsee/server"]

@@ -4,7 +4,11 @@ use crate::core::push_notification::PushNotificationConfig;
 use crate::core::role::Role;
 use crate::core::task::Task;
 use crate::core::util::Object;
+use jsonrpsee::core::to_json_raw_value;
+use jsonrpsee::core::traits::ToRpcParams;
 use serde::{Deserialize, Serialize};
+use serde_json::Error;
+use serde_json::value::RawValue;
 
 /// Message is one unit of communication between client and server. It is
 /// associated with a context and optionally a task. Since the server is
@@ -46,7 +50,7 @@ pub struct Message {
 #[cfg_attr(not(feature = "grpc"), derive(Debug))]
 pub struct SendMessageRequest {
     #[cfg_attr(feature = "grpc", prost(message, tag = "1"))]
-    pub request: Option<Message>,
+    pub message: Option<Message>,
 
     #[cfg_attr(feature = "grpc", prost(message, tag = "2"))]
     pub configuration: Option<SendMessageConfiguration>,
@@ -104,4 +108,10 @@ pub enum SendMessageResponsePayload {
 
     #[cfg_attr(feature = "grpc", prost(message, tag = "2"))]
     Message(Message),
+}
+
+impl ToRpcParams for SendMessageRequest {
+    fn to_rpc_params(self) -> Result<Option<Box<RawValue>>, Error> {
+        to_json_raw_value(&self).map(Some).map_err(Into::into)
+    }
 }

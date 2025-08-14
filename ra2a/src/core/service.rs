@@ -3,6 +3,7 @@ use crate::core::message::{SendMessageRequest, SendMessageResponse};
 
 pub const GRPC_SERVICE_NAME: &str = "a2a.v1.A2AService";
 pub const GRPC_SEND_MESSAGE_PATH: &str = "/a2a.v1.A2AService/SendMessage";
+pub const JSONRPC_SEND_MESSAGE_METHOD: &str = "message/send";
 
 #[async_trait::async_trait]
 pub trait A2A {

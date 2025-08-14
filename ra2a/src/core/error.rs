@@ -1,3 +1,4 @@
+use jsonrpsee::core::ClientError;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -65,6 +66,9 @@ pub enum A2ATransportError {
     #[cfg(feature = "grpc")]
     #[error("GRPC")]
     Grcp(#[from] tonic::Status),
+
+    #[error("Json RPC")]
+    JsonRpc(#[from] ClientError),
 }
 
 impl A2AProtocolError {
@@ -117,5 +121,14 @@ impl A2AProtocolError {
 impl From<tonic::Status> for A2AError {
     fn from(value: tonic::Status) -> Self {
         Self::Transport(A2ATransportError::Grcp(value))
+    }
+}
+
+impl From<ClientError> for A2AError {
+    fn from(value: ClientError) -> Self {
+        if let ClientError::Custom(_value) = &value {
+            todo!("this probably encapsulates the protocol error, so we should parse it");
+        }
+        Self::Transport(A2ATransportError::JsonRpc(value))
     }
 }

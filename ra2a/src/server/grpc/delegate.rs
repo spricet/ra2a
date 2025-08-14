@@ -10,7 +10,7 @@ impl A2A for A2AGrpcDelegate {
         &self,
         request: SendMessageRequest,
     ) -> Result<SendMessageResponse, A2AError> {
-        if let Some(request) = request.request {
+        if let Some(request) = request.message {
             let reply = SendMessageResponse {
                 payload: Some(SendMessageResponsePayload::Message(request)),
             };

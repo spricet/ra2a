@@ -27,7 +27,7 @@ mod tests {
             let client = A2AGrpcClient::new("http://localhost:50051").await.unwrap();
             let res = client
                 .send_message(SendMessageRequest {
-                    request: Some(test_message.clone()),
+                    message: Some(test_message.clone()),
                     configuration: None,
                     metadata: None,
                 })
