@@ -14,6 +14,15 @@ pub enum A2AErrorCode {
 
 #[derive(Debug, Error)]
 pub enum A2AError {
+    #[error(transparent)]
+    Protocol(#[from] A2AProtocolError),
+
+    #[error(transparent)]
+    Transport(#[from] A2ATransportError),
+}
+
+#[derive(Debug, Error)]
+pub enum A2AProtocolError {
     /// The specified task id does not correspond to an existing or active task.
     /// It might be invalid, expired, or already completed and purged.
     #[error("Task not found")]
@@ -48,48 +57,65 @@ pub enum A2AError {
     AuthenticatedExtendedCardNotConfigured { code: A2AErrorCode },
 }
 
-impl A2AError {
+#[derive(Debug, Error)]
+pub enum A2ATransportError {
+    #[error("Missing payload")]
+    MissingPayload,
+
+    #[cfg(feature = "grpc")]
+    #[error("GRPC")]
+    Grcp(#[from] tonic::Status),
+}
+
+impl A2AProtocolError {
     pub fn task_not_found(id: String) -> Self {
-        A2AError::TaskNotFound {
+        A2AProtocolError::TaskNotFound {
             id,
             code: A2AErrorCode::TaskNotFound,
         }
     }
 
     pub fn task_not_cancelable(id: String) -> Self {
-        A2AError::TaskNotCancelable {
+        A2AProtocolError::TaskNotCancelable {
             id,
             code: A2AErrorCode::TaskNotCancelable,
         }
     }
 
     pub fn push_notification_not_supported() -> Self {
-        A2AError::PushNotificationNotSupported {
+        A2AProtocolError::PushNotificationNotSupported {
             code: A2AErrorCode::PushNotificationNotSupported,
         }
     }
 
     pub fn unsupported_operation() -> Self {
-        A2AError::UnsupportedOperation {
+        A2AProtocolError::UnsupportedOperation {
             code: A2AErrorCode::UnsupportedOperation,
         }
     }
 
     pub fn content_type_not_supported() -> Self {
-        A2AError::ContentTypeNotSupported {
+        A2AProtocolError::ContentTypeNotSupported {
             code: A2AErrorCode::ContentTypeNotSupported,
         }
     }
 
     pub fn invalid_agent_response() -> Self {
-        A2AError::InvalidAgentResponse {
+        A2AProtocolError::InvalidAgentResponse {
             code: A2AErrorCode::InvalidAgentResponse,
         }
     }
 
     pub fn authenticated_extended_card_not_configured() -> Self {
-        A2AError::AuthenticatedExtendedCardNotConfigured {
+        A2AProtocolError::AuthenticatedExtendedCardNotConfigured {
             code: A2AErrorCode::AuthenticatedExtendedCardNotConfigured,
         }
+    }
+}
+
+#[cfg(feature = "grpc")]
+impl From<tonic::Status> for A2AError {
+    fn from(value: tonic::Status) -> Self {
+        Self::Transport(A2ATransportError::Grcp(value))
     }
 }

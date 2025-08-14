@@ -10,6 +10,9 @@ bytes = { workspace = true }
 chrono = { workspace = true }
 derive_builder = { workspace = true }
 http = { workspace = true }
+http-body = { workspace = true }
+http-body-util = { workspace = true }
+hyper = { workspace = true }
 prost = { workspace = true, optional = true }
 prost-types = { workspace = true }
 serde = { workspace = true }
@@ -20,6 +23,7 @@ tonic = { workspace = true, optional = true }
 tonic-prost = { workspace = true, optional = true }
 
 [dev-dependencies]
+tokio = { workspace = true }
 
 [features]
 grpc = ["prost", "tonic"]

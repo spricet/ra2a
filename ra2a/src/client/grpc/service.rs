@@ -1,5 +1,8 @@
 use crate::client::grpc::A2AGrpcClientError;
 use crate::core::agent::AgentCard;
+use crate::core::message::{SendMessageRequest, SendMessageResponse};
+use crate::core::{A2A, A2AError, GRPC_SEND_MESSAGE_PATH};
+use async_trait::async_trait;
 use http::uri::PathAndQuery;
 use tonic::Request;
 use tonic::client::Grpc;
@@ -51,5 +54,30 @@ impl A2AGrpcClient {
         // Here you would typically make a gRPC call to test the connection.
         // For demonstration purposes, we will just return Ok.
         Ok(())
+    }
+}
+
+#[async_trait]
+impl A2A for A2AGrpcClient {
+    async fn send_message(
+        &self,
+        request: SendMessageRequest,
+    ) -> Result<SendMessageResponse, A2AError> {
+        let mut grpc = Grpc::new(self.channel.clone());
+        grpc.ready()
+            .await
+            .map_err(|e| tonic::Status::unavailable(format!("client not ready: {e}")))?;
+        let res = grpc
+            .unary(
+                Request::new(request),
+                PathAndQuery::from_static(GRPC_SEND_MESSAGE_PATH),
+                ProstCodec::<SendMessageRequest, SendMessageResponse>::default(),
+            )
+            .await;
+        match res {
+            Ok(res) => Ok(res.into_inner()),
+            // todo unpack various grpc error codes to discover protocol errors underneath, which probably depends on the spec getting updated
+            Err(err) => Err(A2AError::from(err)),
+        }
     }
 }
