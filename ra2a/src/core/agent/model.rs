@@ -455,7 +455,7 @@ impl prost::Message for TransportProtocol {
 
 #[cfg(test)]
 mod serde_tests {
-    use crate::core::agent::{sample_agent_card, AgentCard};
+    use crate::core::agent::{AgentCard, sample_agent_card};
 
     #[test]
     fn spec_example_serde() {

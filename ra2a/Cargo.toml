@@ -5,14 +5,21 @@ authors = ["stp041@gmail.com"]
 edition = "2024"
 
 [dependencies]
+async-trait = { workspace = true }
 bytes = { workspace = true }
+chrono = { workspace = true }
 derive_builder = { workspace = true }
+http = { workspace = true }
 prost = { workspace = true, optional = true }
 prost-types = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+thiserror = { workspace = true }
+time = { workspace = true }
+tonic = { workspace = true, optional = true }
+tonic-prost = { workspace = true, optional = true }
 
 [dev-dependencies]
 
 [features]
-grpc = ["prost"]
+grpc = ["prost", "tonic"]
