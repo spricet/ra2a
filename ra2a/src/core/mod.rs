@@ -8,5 +8,7 @@ pub mod task;
 pub mod util;
 
 mod error;
+mod service;
 
 pub use error::*;
+pub use service::*;

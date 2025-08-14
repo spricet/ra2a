@@ -1,6 +1,8 @@
 use crate::core::part::Part;
+use crate::core::push_notification::PushNotificationConfig;
 #[cfg(feature = "grpc")]
 use crate::core::role::Role;
+use crate::core::task::Task;
 use crate::core::util::Object;
 use serde::{Deserialize, Serialize};
 
@@ -36,4 +38,70 @@ pub struct Message {
 
     #[cfg_attr(feature = "grpc", prost(repeated, string, tag = "7"))]
     pub extensions: Vec<String>,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "grpc", derive(prost::Message))]
+#[cfg_attr(not(feature = "grpc"), derive(Debug))]
+pub struct SendMessageRequest {
+    #[cfg_attr(feature = "grpc", prost(message, tag = "1"))]
+    pub request: Option<Message>,
+
+    #[cfg_attr(feature = "grpc", prost(message, tag = "2"))]
+    pub configuration: Option<SendMessageConfiguration>,
+
+    #[cfg_attr(feature = "grpc", prost(message, tag = "3"))]
+    pub metadata: Option<Object>,
+}
+
+/// Configuration of a send message request.
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "grpc", derive(prost::Message))]
+#[cfg_attr(not(feature = "grpc"), derive(Debug))]
+pub struct SendMessageConfiguration {
+    /// The output modes that the agent is expected to respond with.
+    #[cfg_attr(feature = "grpc", prost(repeated, string, tag = "1"))]
+    pub accepted_output_modes: Vec<String>,
+
+    /// A configuration of a webhook that can be used to receive updates
+    #[cfg_attr(feature = "grpc", prost(message, tag = "2"))]
+    pub push_notification: Option<PushNotificationConfig>,
+
+    /// The maximum number of messages to include in the history. if 0, the
+    /// history will be unlimited.
+    #[cfg_attr(feature = "grpc", prost(int32, tag = "3"))]
+    pub history_length: i32,
+
+    /// If true, the message will be blocking until the task is completed. If
+    /// false, the message will be non-blocking and the task will be returned
+    /// immediately. It is the caller's responsibility to check for any task
+    /// updates.
+    #[cfg_attr(feature = "grpc", prost(bool, tag = "4"))]
+    pub blocking: bool,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "grpc", derive(prost::Message))]
+#[cfg_attr(not(feature = "grpc"), derive(Debug))]
+pub struct SendMessageResponse {
+    #[cfg_attr(
+        feature = "grpc",
+        prost(oneof = "SendMessageResponsePayload", tags = "1, 2")
+    )]
+    pub payload: Option<SendMessageResponsePayload>,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "grpc", derive(prost::Oneof))]
+#[cfg_attr(not(feature = "grpc"), derive(Debug))]
+pub enum SendMessageResponsePayload {
+    #[cfg_attr(feature = "grpc", prost(message, tag = "1"))]
+    Task(Task),
+
+    #[cfg_attr(feature = "grpc", prost(message, tag = "2"))]
+    Message(Message),
 }
