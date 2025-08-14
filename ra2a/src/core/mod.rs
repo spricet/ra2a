@@ -6,3 +6,7 @@ pub mod push_notification;
 pub mod role;
 pub mod task;
 pub mod util;
+
+mod error;
+
+pub use error::*;
