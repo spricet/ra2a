@@ -1,6 +1,6 @@
 use crate::agent::Agent;
 use crate::core::message::{SendMessageRequest, SendMessageResponse, SendMessageResponsePayload};
-use crate::core::{A2A, A2AError, A2ATransportError};
+use crate::core::{A2AError, A2ATransportError, A2A};
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -22,17 +22,26 @@ impl A2A for A2ADelegate {
         request: SendMessageRequest,
     ) -> Result<SendMessageResponse, A2AError> {
         if let Some(message) = request.message {
+            if let Some(configuration) = request.configuration {
+                // todo
+            }
+
             let task_id = match message.task_id.as_str() {
                 "" => None,
                 _ => Some(message.task_id.clone()),
             };
             // fetch the task
 
-            let res = self.agent.handle_message(message, None).await?;
-            if let SendMessageResponsePayload::Task(task) = &res {
+            let payload = self
+                .agent
+                .handle_message(message, request.metadata, None)
+                .await?;
+            if let SendMessageResponsePayload::Task(task) = &payload {
                 // persist the task
             }
-            return Ok(SendMessageResponse { payload: Some(res) });
+            return Ok(SendMessageResponse {
+                payload: Some(payload),
+            });
         }
         Err(A2AError::Transport(A2ATransportError::MissingPayload))
     }
