@@ -18,8 +18,10 @@ use tonic::{
 };
 use tonic_prost::ProstCodec;
 
-#[derive(Debug, Clone, Default)]
-pub struct A2AGrpc;
+#[derive(Debug, Clone)]
+pub struct A2AGrpc {
+    pub(crate) delegate: A2ADelegate,
+}
 
 impl NamedService for A2AGrpc {
     const NAME: &'static str = GRPC_SERVICE_NAME;
@@ -35,6 +37,7 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
     }
 
     fn call(&mut self, req: HttpRequest<Body>) -> Self::Future {
+        let svc = SendMessage { delegate: self.delegate.clone() };
         Box::pin(async move {
             match req.uri().path() {
                 GRPC_SEND_MESSAGE_PATH => {
@@ -44,7 +47,7 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
                             .send_compressed(CompressionEncoding::Gzip)
                             .max_decoding_message_size(4 * 1024 * 1024)
                             .max_encoding_message_size(4 * 1024 * 1024);
-                    let res = grpc.unary(SendMessage, req).await;
+                    let res = grpc.unary(svc, req).await;
                     Ok(res)
                 }
                 _ => Ok(Status::unimplemented("unknown method").into_http()),
@@ -55,16 +58,20 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
 
 type BoxFut<T> = Pin<Box<dyn Future<Output=T> + Send + 'static>>;
 
-#[derive(Debug, Clone, Default)]
-pub struct SendMessage;
+#[derive(Debug, Clone)]
+pub struct SendMessage {
+    delegate: A2ADelegate,
+}
+
 impl UnaryService<SendMessageRequest> for SendMessage {
     type Response = SendMessageResponse;
     type Future = BoxFut<Result<Response<Self::Response>, Status>>;
 
     fn call(&mut self, request: Request<SendMessageRequest>) -> Self::Future {
         let req = request.into_inner();
+        let delegate = self.delegate.clone();
         Box::pin(async move {
-            let res = A2ADelegate.send_message(req).await;
+            let res = delegate.send_message(req).await;
             match res {
                 Ok(response) => Ok(Response::new(response)),
                 Err(e) => Err(Status::internal(e.to_string())),

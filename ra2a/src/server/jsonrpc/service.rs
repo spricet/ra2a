@@ -9,22 +9,23 @@ use std::net::SocketAddr;
 #[derive(Debug, Clone)]
 pub struct A2AJsonRpcServer {
     addr: SocketAddr,
+    delegate: A2ADelegate,
 }
 
 impl A2AJsonRpcServer {
-    pub fn new(addr: SocketAddr) -> Self {
-        Self { addr }
+    pub fn new(addr: SocketAddr, delegate: A2ADelegate) -> Self {
+        Self { addr, delegate }
     }
 
     pub async fn serve<F: Future<Output=()>>(&self, signal: F) -> Result<(), A2AServerError> {
         let server = Server::builder().build(self.addr).await?;
 
-        let mut module = RpcModule::new(());
+        let mut module = RpcModule::new(self.delegate.clone());
         module.register_async_method(
             JSONRPC_SEND_MESSAGE_METHOD,
-            |params, _ctx, _| async move {
+            |params, ctx, _| async move {
                 let request = params.parse()?;
-                let res = A2ADelegate.send_message(request).await.unwrap(); // todo handle these errors!!!
+                let res = ctx.send_message(request).await.unwrap(); // todo handle these errors!!!
                 Ok::<_, ErrorObjectOwned>(res)
             },
         )?;

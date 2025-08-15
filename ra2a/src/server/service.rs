@@ -1,24 +1,36 @@
+use crate::agent::Agent;
+use crate::server::delegate::A2ADelegate;
 use crate::server::A2AServerError;
 use futures::try_join;
 use std::net::SocketAddr;
 use tokio::sync::broadcast::Sender;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct A2AServer {
+    delegate: A2ADelegate,
     #[cfg(feature = "grpc")]
     grpc: Option<crate::server::grpc::A2AGrpcServer>,
     jsonrpc: Option<crate::server::jsonrpc::A2AJsonRpcServer>,
 }
 
 impl A2AServer {
+    pub fn new<A: Agent + 'static>(agent: A) -> Self {
+        A2AServer {
+            delegate: A2ADelegate::new(agent),
+            #[cfg(feature = "grpc")]
+            grpc: None,
+            jsonrpc: None,
+        }
+    }
+
     pub fn with_jsonrpc(mut self, addr: SocketAddr) -> Self {
-        self.jsonrpc = Some(crate::server::jsonrpc::A2AJsonRpcServer::new(addr));
+        self.jsonrpc = Some(crate::server::jsonrpc::A2AJsonRpcServer::new(addr, self.delegate.clone()));
         self
     }
 
     #[cfg(feature = "grpc")]
     pub fn with_grpc(mut self, addr: SocketAddr) -> Self {
-        self.grpc = Some(crate::server::grpc::A2AGrpcServer::new(addr));
+        self.grpc = Some(crate::server::grpc::A2AGrpcServer::new(addr, self.delegate.clone()));
         self
     }
 
