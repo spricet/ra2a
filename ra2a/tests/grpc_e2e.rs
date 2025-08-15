@@ -3,9 +3,9 @@
 mod tests {
     use ra2a::agent::NoopAgent;
     use ra2a::client::grpc::A2AGrpcClient;
+    use ra2a::core::A2A;
     use ra2a::core::message::{Message, SendMessageRequest, SendMessageResponsePayload};
     use ra2a::core::role::Role;
-    use ra2a::core::A2A;
     use ra2a::server::A2AServer;
     use std::net::SocketAddr;
     use std::str::FromStr;

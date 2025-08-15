@@ -1,6 +1,6 @@
 use crate::agent::Agent;
-use crate::server::delegate::A2ADelegate;
 use crate::server::A2AServerError;
+use crate::server::delegate::A2ADelegate;
 use futures::try_join;
 use std::net::SocketAddr;
 use tokio::sync::broadcast::Sender;
@@ -24,17 +24,23 @@ impl A2AServer {
     }
 
     pub fn with_jsonrpc(mut self, addr: SocketAddr) -> Self {
-        self.jsonrpc = Some(crate::server::jsonrpc::A2AJsonRpcServer::new(addr, self.delegate.clone()));
+        self.jsonrpc = Some(crate::server::jsonrpc::A2AJsonRpcServer::new(
+            addr,
+            self.delegate.clone(),
+        ));
         self
     }
 
     #[cfg(feature = "grpc")]
     pub fn with_grpc(mut self, addr: SocketAddr) -> Self {
-        self.grpc = Some(crate::server::grpc::A2AGrpcServer::new(addr, self.delegate.clone()));
+        self.grpc = Some(crate::server::grpc::A2AGrpcServer::new(
+            addr,
+            self.delegate.clone(),
+        ));
         self
     }
 
-    pub async fn serve_with_shutdown<F: Future<Output=()>>(
+    pub async fn serve_with_shutdown<F: Future<Output = ()>>(
         self,
         signal: F,
     ) -> Result<(), A2AServerError> {

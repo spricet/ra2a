@@ -1,6 +1,6 @@
 use crate::agent::Agent;
 use crate::core::message::{SendMessageRequest, SendMessageResponse, SendMessageResponsePayload};
-use crate::core::{A2AError, A2ATransportError, A2A};
+use crate::core::{A2A, A2AError, A2ATransportError};
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -37,7 +37,6 @@ impl A2A for A2ADelegate {
         Err(A2AError::Transport(A2ATransportError::MissingPayload))
     }
 }
-
 
 impl A2ADelegate {
     pub fn new<T: Agent + 'static>(agent: T) -> Self {

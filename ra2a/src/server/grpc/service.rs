@@ -1,6 +1,6 @@
+use crate::server::A2AServerError;
 use crate::server::delegate::A2ADelegate;
 use crate::server::grpc::A2AGrpc;
-use crate::server::A2AServerError;
 use std::net::SocketAddr;
 use tonic::transport::Server;
 
@@ -15,9 +15,11 @@ impl A2AGrpcServer {
         Self { addr, delegate }
     }
 
-    pub async fn serve<F: Future<Output=()>>(&self, signal: F) -> Result<(), A2AServerError> {
+    pub async fn serve<F: Future<Output = ()>>(&self, signal: F) -> Result<(), A2AServerError> {
         Server::builder()
-            .add_service(A2AGrpc { delegate: self.delegate.clone() })
+            .add_service(A2AGrpc {
+                delegate: self.delegate.clone(),
+            })
             .serve_with_shutdown(self.addr, signal)
             .await?;
         Ok(())

@@ -12,9 +12,9 @@ use crate::server::delegate::A2ADelegate;
 use tonic::body::Body;
 use tonic::codegen::Service;
 use tonic::{
-    codec::CompressionEncoding, server::{Grpc, NamedService, UnaryService}, Request,
-    Response,
-    Status,
+    Request, Response, Status,
+    codec::CompressionEncoding,
+    server::{Grpc, NamedService, UnaryService},
 };
 use tonic_prost::ProstCodec;
 
@@ -37,7 +37,9 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
     }
 
     fn call(&mut self, req: HttpRequest<Body>) -> Self::Future {
-        let svc = SendMessage { delegate: self.delegate.clone() };
+        let svc = SendMessage {
+            delegate: self.delegate.clone(),
+        };
         Box::pin(async move {
             match req.uri().path() {
                 GRPC_SEND_MESSAGE_PATH => {
@@ -56,7 +58,7 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
     }
 }
 
-type BoxFut<T> = Pin<Box<dyn Future<Output=T> + Send + 'static>>;
+type BoxFut<T> = Pin<Box<dyn Future<Output = T> + Send + 'static>>;
 
 #[derive(Debug, Clone)]
 pub struct SendMessage {
