@@ -1,6 +1,5 @@
 use crate::core::message::{SendMessageRequest, SendMessageResponse};
 use crate::core::{A2A, GRPC_SEND_MESSAGE_PATH, GRPC_SERVICE_NAME};
-use crate::server::grpc::A2AGrpcDelegate;
 use http::{Request as HttpRequest, Response as HttpResponse};
 use std::{
     convert::Infallible,
@@ -9,16 +8,15 @@ use std::{
     task::{Context, Poll},
 };
 
+use crate::server::delegate::A2AGrpcDelegate;
 use tonic::body::Body;
 use tonic::codegen::Service;
 use tonic::{
-    Request, Response, Status,
-    codec::CompressionEncoding,
-    server::{Grpc, NamedService, UnaryService},
+    codec::CompressionEncoding, server::{Grpc, NamedService, UnaryService}, Request,
+    Response,
+    Status,
 };
 use tonic_prost::ProstCodec;
-
-const DELEGATE: A2AGrpcDelegate = A2AGrpcDelegate;
 
 #[derive(Debug, Clone, Default)]
 pub struct A2AGrpc;
@@ -46,8 +44,7 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
                             .send_compressed(CompressionEncoding::Gzip)
                             .max_decoding_message_size(4 * 1024 * 1024)
                             .max_encoding_message_size(4 * 1024 * 1024);
-                    let svc = SendMessage::default();
-                    let res = grpc.unary(svc, req).await;
+                    let res = grpc.unary(SendMessage, req).await;
                     Ok(res)
                 }
                 _ => Ok(Status::unimplemented("unknown method").into_http()),
@@ -56,7 +53,7 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
     }
 }
 
-type BoxFut<T> = Pin<Box<dyn Future<Output = T> + Send + 'static>>;
+type BoxFut<T> = Pin<Box<dyn Future<Output=T> + Send + 'static>>;
 
 #[derive(Debug, Clone, Default)]
 pub struct SendMessage;
@@ -67,7 +64,7 @@ impl UnaryService<SendMessageRequest> for SendMessage {
     fn call(&mut self, request: Request<SendMessageRequest>) -> Self::Future {
         let req = request.into_inner();
         Box::pin(async move {
-            let res = DELEGATE.send_message(req).await;
+            let res = A2AGrpcDelegate.send_message(req).await;
             match res {
                 Ok(response) => Ok(Response::new(response)),
                 Err(e) => Err(Status::internal(e.to_string())),

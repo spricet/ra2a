@@ -10,8 +10,8 @@ pub struct A2AJsonRpcClient {
 }
 
 impl A2AJsonRpcClient {
-    pub fn new() -> Result<Self, A2AJsonRpcClientError> {
-        let client = HttpClientBuilder::default().build("http://localhost:50051")?;
+    pub fn new(url: impl AsRef<str>) -> Result<Self, A2AJsonRpcClientError> {
+        let client = HttpClientBuilder::default().build(url)?;
 
         Ok(A2AJsonRpcClient { client })
     }

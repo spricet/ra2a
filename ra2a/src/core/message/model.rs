@@ -7,8 +7,8 @@ use crate::core::util::Object;
 use jsonrpsee::core::to_json_raw_value;
 use jsonrpsee::core::traits::ToRpcParams;
 use serde::{Deserialize, Serialize};
-use serde_json::Error;
 use serde_json::value::RawValue;
+use serde_json::Error;
 
 /// Message is one unit of communication between client and server. It is
 /// associated with a context and optionally a task. Since the server is
@@ -112,6 +112,6 @@ pub enum SendMessageResponsePayload {
 
 impl ToRpcParams for SendMessageRequest {
     fn to_rpc_params(self) -> Result<Option<Box<RawValue>>, Error> {
-        to_json_raw_value(&self).map(Some).map_err(Into::into)
+        to_json_raw_value(&self).map(Some)
     }
 }
