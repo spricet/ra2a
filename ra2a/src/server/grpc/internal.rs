@@ -8,7 +8,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::server::delegate::A2AGrpcDelegate;
+use crate::server::delegate::A2ADelegate;
 use tonic::body::Body;
 use tonic::codegen::Service;
 use tonic::{
@@ -64,7 +64,7 @@ impl UnaryService<SendMessageRequest> for SendMessage {
     fn call(&mut self, request: Request<SendMessageRequest>) -> Self::Future {
         let req = request.into_inner();
         Box::pin(async move {
-            let res = A2AGrpcDelegate.send_message(req).await;
+            let res = A2ADelegate.send_message(req).await;
             match res {
                 Ok(response) => Ok(Response::new(response)),
                 Err(e) => Err(Status::internal(e.to_string())),

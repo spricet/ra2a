@@ -5,7 +5,9 @@ mod tests {
     use ra2a::core::A2A;
     use ra2a::core::message::{Message, SendMessageRequest, SendMessageResponsePayload};
     use ra2a::core::role::Role;
-    use ra2a::server::grpc::A2AGrpcServer;
+    use ra2a::server::A2AServer;
+    use std::net::SocketAddr;
+    use std::str::FromStr;
 
     #[tokio::test]
     async fn test_send_message() {
@@ -19,9 +21,11 @@ mod tests {
             extensions: vec![],
         };
 
-        let server = A2AGrpcServer {};
+        let server =
+            A2AServer::default().with_grpc(SocketAddr::from_str("127.0.0.1:50051").unwrap());
         let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-        let serve = server.serve(async { rx.await.expect("unexpected server shutdown signal") });
+        let serve = server
+            .serve_with_shutdown(async { rx.await.expect("unexpected server shutdown signal") });
         let test = async {
             tokio::time::sleep(std::time::Duration::from_millis(200)).await;
             let client = A2AGrpcClient::new("http://localhost:50051").await.unwrap();

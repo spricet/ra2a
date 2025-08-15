@@ -2,10 +2,10 @@ use crate::core::message::{SendMessageRequest, SendMessageResponse, SendMessageR
 use crate::core::{A2A, A2AError, A2ATransportError};
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct A2AGrpcDelegate;
+pub struct A2ADelegate;
 
 #[async_trait::async_trait]
-impl A2A for A2AGrpcDelegate {
+impl A2A for A2ADelegate {
     async fn send_message(
         &self,
         request: SendMessageRequest,
