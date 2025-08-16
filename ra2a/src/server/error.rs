@@ -7,11 +7,14 @@ pub enum A2AServerError {
     #[error("Grpc transport")]
     Grpc(#[from] tonic::transport::Error),
 
-    #[error("io")]
+    #[error("Io")]
     Io(#[from] std::io::Error),
 
-    #[error("register method")]
+    #[error("Register method")]
     RegisterMethod(#[from] RegisterMethodError),
+
+    #[error("Task join error")]
+    Join(#[from] tokio::task::JoinError),
 }
 
 #[derive(Debug, Error)]

@@ -5,7 +5,7 @@ mod tests {
     use ra2a::client::grpc::A2AGrpcClient;
     use ra2a::core::message::{Message, SendMessageRequest, SendMessageResponsePayload};
     use ra2a::core::role::Role;
-    use ra2a::core::{Transport, A2A};
+    use ra2a::core::{A2A, Transport};
     use std::net::SocketAddr;
 
     #[tokio::test]
@@ -27,28 +27,23 @@ mod tests {
             .unwrap();
         assert_eq!(agent.supported_transports(), vec![Transport::Grpc]);
 
-        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+        let server = agent.start_server();
 
-        let serve = agent
-            .serve_with_shutdown(async { rx.await.expect("unexpected agent shutdown signal") });
-        let test = async {
-            let client = A2AGrpcClient::new("http://localhost:50051").await.unwrap();
-            let res = client
-                .send_message(SendMessageRequest {
-                    message: Some(test_message.clone()),
-                    configuration: None,
-                    metadata: None,
-                })
-                .await
-                .unwrap();
-            tx.send(()).unwrap();
-            res
-        };
-        let (_, res) = tokio::join!(serve, test);
+        let client = A2AGrpcClient::new("http://localhost:50051").await.unwrap();
+        let res = client
+            .send_message(SendMessageRequest {
+                message: Some(test_message.clone()),
+                configuration: None,
+                metadata: None,
+            })
+            .await
+            .unwrap();
         let payload = match res.payload.unwrap() {
             SendMessageResponsePayload::Task(_) => panic!("expected message"),
             SendMessageResponsePayload::Message(m) => m,
         };
         assert_eq!(payload, test_message);
+
+        server.shutdown().await.unwrap();
     }
 }

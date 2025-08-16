@@ -1,4 +1,5 @@
 use crate::agent::A2AAgentError;
+use crate::server::A2AServerError;
 use jsonrpsee::core::ClientError;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -24,6 +25,10 @@ pub enum A2AError {
 
     #[error(transparent)]
     Transport(#[from] A2ATransportError),
+
+    #[cfg(feature = "server")]
+    #[error(transparent)]
+    Server(#[from] A2AServerError),
 }
 
 #[derive(Debug, Error)]

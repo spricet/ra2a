@@ -51,8 +51,8 @@ impl A2AServer {
         transports
     }
 
-    pub async fn serve_with_shutdown<F: Future<Output=()>>(
-        self,
+    pub async fn serve_with_shutdown<F: Future<Output = ()>>(
+        &self,
         signal: F,
     ) -> Result<(), A2AServerError> {
         let (tx, _rx) = tokio::sync::broadcast::channel(1);
