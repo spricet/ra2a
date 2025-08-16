@@ -5,20 +5,38 @@ use jsonrpsee::RpcModule;
 use jsonrpsee::server::Server;
 use jsonrpsee::types::ErrorObjectOwned;
 use std::net::SocketAddr;
+use tokio::net::TcpListener;
 
 #[derive(Debug, Clone)]
 pub struct A2AJsonRpcServer {
-    addr: SocketAddr,
+    bind_addr: SocketAddr,
     delegate: A2ADelegate,
 }
 
 impl A2AJsonRpcServer {
-    pub fn new(addr: SocketAddr, delegate: A2ADelegate) -> Self {
-        Self { addr, delegate }
+    pub fn new(bind_addr: SocketAddr, delegate: A2ADelegate) -> Self {
+        Self {
+            bind_addr,
+            delegate,
+        }
     }
 
-    pub async fn serve<F: Future<Output = ()>>(&self, signal: F) -> Result<(), A2AServerError> {
-        let server = Server::builder().build(self.addr).await?;
+    pub async fn bind(&self) -> Result<TcpListener, A2AServerError> {
+        TcpListener::bind(self.bind_addr)
+            .await
+            .map_err(A2AServerError::from)
+    }
+
+    pub async fn serve<F: Future<Output = ()>>(
+        &self,
+        signal: F,
+        listener: TcpListener,
+    ) -> Result<(), A2AServerError> {
+        // hand off to jsonrpsee as std listener
+        let std_listener = listener.into_std()?;
+        // ensure non-blocking for hyper/jsonrpsee
+        std_listener.set_nonblocking(true)?;
+        let server = Server::builder().build_from_tcp(std_listener)?;
 
         let mut module = RpcModule::new(self.delegate.clone());
         module.register_async_method(JSONRPC_SEND_MESSAGE_METHOD, |params, ctx, _| async move {

@@ -22,11 +22,11 @@ impl A2A for A2ADelegate {
         request: SendMessageRequest,
     ) -> Result<SendMessageResponse, A2AError> {
         if let Some(message) = request.message {
-            if let Some(configuration) = request.configuration {
+            if let Some(_configuration) = request.configuration {
                 // todo
             }
 
-            let task_id = match message.task_id.as_str() {
+            let _task_id = match message.task_id.as_str() {
                 "" => None,
                 _ => Some(message.task_id.clone()),
             };
@@ -36,7 +36,7 @@ impl A2A for A2ADelegate {
                 .agent
                 .handle_message(message, request.metadata, None)
                 .await?;
-            if let SendMessageResponsePayload::Task(task) = &payload {
+            if let SendMessageResponsePayload::Task(_task) = &payload {
                 // persist the task
             }
             return Ok(SendMessageResponse {

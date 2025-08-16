@@ -1,6 +1,7 @@
 use crate::agent::{A2ADelegate, AgentBuilderError, AgentHandler};
 use crate::core::{A2AError, Transport};
 use crate::server::{A2AServer, A2AServerError};
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
@@ -14,32 +15,45 @@ pub struct Agent<A: AgentHandler + 'static> {
 
 impl<A: AgentHandler + 'static> Agent<A> {
     /// Starts the agent server with the configured transports that responds to requests in the A2A protocol.
-    pub async fn serve_with_shutdown<F: Future<Output = ()>>(
-        self,
-        signal: F,
-    ) -> Result<(), crate::server::A2AServerError> {
-        self.server.serve_with_shutdown(signal).await
-    }
-
-    pub fn start_server(&self) -> AgentServerHandle {
+    pub async fn start_server(&self) -> Result<AgentServerHandle, A2AError> {
         let (tx, rx) = tokio::sync::oneshot::channel::<()>();
         let server = self.server.clone();
+
+        let mut local_addrs = HashMap::new();
+        let (grpc_listener, jrpc_listener) = server.bind_all().await?;
+        let mut transports = vec![];
+        if let Some(listener) = grpc_listener {
+            local_addrs.insert(
+                Transport::Grpc,
+                listener.local_addr().map_err(A2AServerError::from)?,
+            );
+            transports.push((Transport::Grpc, listener));
+        }
+        if let Some(listener) = jrpc_listener {
+            local_addrs.insert(
+                Transport::JsonRpc,
+                listener.local_addr().map_err(A2AServerError::from)?,
+            );
+            transports.push((Transport::JsonRpc, listener));
+        }
 
         let handle: JoinHandle<Result<(), A2AError>> = tokio::spawn(async move {
             // Treat either "sent ()" or "sender dropped" as a shutdown signal
             let shutdown = async move {
                 let _ = rx.await;
             };
+
             server
-                .serve_with_shutdown(shutdown)
+                .serve_with_shutdown(transports, shutdown)
                 .await
                 .map_err(A2AError::from)
         });
 
-        AgentServerHandle {
+        Ok(AgentServerHandle {
             tx: Some(tx),
             handle: Some(handle),
-        }
+            local_addrs,
+        })
     }
 
     /// Returns the supported transports for the agent.
@@ -52,6 +66,7 @@ impl<A: AgentHandler + 'static> Agent<A> {
 pub struct AgentServerHandle {
     tx: Option<tokio::sync::oneshot::Sender<()>>,
     handle: Option<JoinHandle<Result<(), A2AError>>>,
+    local_addrs: HashMap<Transport, SocketAddr>,
 }
 
 impl AgentServerHandle {
@@ -70,6 +85,14 @@ impl AgentServerHandle {
             .unwrap()
             .await
             .unwrap_or_else(|e| Err(A2AError::from(A2AServerError::Join(e))))
+    }
+
+    pub fn local_addr(&self, transport: Transport) -> Option<SocketAddr> {
+        self.local_addrs.get(&transport).cloned()
+    }
+
+    pub fn local_addrs(&self) -> Vec<(Transport, SocketAddr)> {
+        self.local_addrs.iter().map(|(k, v)| (*k, *v)).collect()
     }
 }
 
@@ -100,6 +123,7 @@ impl<A: AgentHandler + 'static> AgentBuilder<A> {
             handler: Arc::new(handler),
             name: None,
             json_rpc_socket: None,
+            #[cfg(feature = "grpc")]
             grpc_socket: None,
         }
     }
@@ -109,14 +133,14 @@ impl<A: AgentHandler + 'static> AgentBuilder<A> {
         self
     }
 
-    pub fn with_json_rpc_server(mut self, addr: impl Into<SocketAddr>) -> Self {
-        self.json_rpc_socket = Some(addr.into());
+    pub fn with_json_rpc_server(mut self, addr: SocketAddr) -> Self {
+        self.json_rpc_socket = Some(addr);
         self
     }
 
     #[cfg(feature = "grpc")]
-    pub fn with_grpc_server(mut self, addr: impl Into<SocketAddr>) -> Self {
-        self.grpc_socket = Some(addr.into());
+    pub fn with_grpc_server(mut self, addr: SocketAddr) -> Self {
+        self.grpc_socket = Some(addr);
         self
     }
 

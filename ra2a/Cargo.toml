@@ -27,4 +27,4 @@ tokio = { workspace = true }
 
 [features]
 grpc = ["prost", "tonic"]
-server = ["jsonrpsee/server"]
+agent = ["jsonrpsee/server"]

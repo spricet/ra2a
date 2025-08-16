@@ -6,7 +6,6 @@ mod tests {
     use ra2a::core::message::{Message, SendMessageRequest, SendMessageResponsePayload};
     use ra2a::core::role::Role;
     use ra2a::core::{A2A, Transport};
-    use std::net::SocketAddr;
 
     #[tokio::test]
     async fn test_send_message() {
@@ -22,14 +21,17 @@ mod tests {
 
         let agent = AgentBuilder::new(NoopAgentHandler)
             .with_name("test")
-            .with_grpc_server("127.0.0.1:50051".parse::<SocketAddr>().unwrap())
+            .with_grpc_server("[::]:0".parse().unwrap())
             .build()
             .unwrap();
         assert_eq!(agent.supported_transports(), vec![Transport::Grpc]);
 
-        let server = agent.start_server();
+        let server = agent.start_server().await.unwrap();
+        let addr = server.local_addr(Transport::Grpc).unwrap();
 
-        let client = A2AGrpcClient::new("http://localhost:50051").await.unwrap();
+        let client = A2AGrpcClient::new(format!("http://localhost:{}", addr.port()))
+            .await
+            .unwrap();
         let res = client
             .send_message(SendMessageRequest {
                 message: Some(test_message.clone()),

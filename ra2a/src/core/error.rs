@@ -1,5 +1,3 @@
-use crate::agent::A2AAgentError;
-use crate::server::A2AServerError;
 use jsonrpsee::core::ClientError;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -17,8 +15,9 @@ pub enum A2AErrorCode {
 
 #[derive(Debug, Error)]
 pub enum A2AError {
+    #[cfg(feature = "agent")]
     #[error(transparent)]
-    Agent(#[from] A2AAgentError),
+    Agent(#[from] crate::agent::A2AAgentError),
 
     #[error(transparent)]
     Protocol(#[from] A2AProtocolError),
@@ -26,9 +25,9 @@ pub enum A2AError {
     #[error(transparent)]
     Transport(#[from] A2ATransportError),
 
-    #[cfg(feature = "server")]
+    #[cfg(feature = "agent")]
     #[error(transparent)]
-    Server(#[from] A2AServerError),
+    Server(#[from] crate::server::A2AServerError),
 }
 
 #[derive(Debug, Error)]
