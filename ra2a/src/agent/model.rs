@@ -1,4 +1,5 @@
 use crate::agent::{A2ADelegate, AgentBuilderError, AgentHandler};
+use crate::core::Transport;
 use crate::server::A2AServer;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -11,11 +12,15 @@ pub struct Agent<A: AgentHandler + 'static> {
 }
 
 impl<A: AgentHandler + 'static> Agent<A> {
-    pub async fn serve_with_shutdown<F: Future<Output = ()>>(
+    pub async fn serve_with_shutdown<F: Future<Output=()>>(
         self,
         signal: F,
     ) -> Result<(), crate::server::A2AServerError> {
         self.server.serve_with_shutdown(signal).await
+    }
+
+    pub fn supported_transports(&self) -> Vec<Transport> {
+        self.server.enabled_transports()
     }
 }
 

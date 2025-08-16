@@ -11,9 +11,6 @@ chrono = { workspace = true }
 derive_builder = { workspace = true }
 futures = { workspace = true }
 http = { workspace = true }
-http-body = { workspace = true }
-http-body-util = { workspace = true }
-hyper = { workspace = true }
 jsonrpsee = { workspace = true }
 prost = { workspace = true, optional = true }
 prost-types = { workspace = true }
@@ -24,11 +21,10 @@ time = { workspace = true }
 tokio = { workspace = true, features = ["macros", "signal"] }
 tonic = { workspace = true, optional = true }
 tonic-prost = { workspace = true, optional = true }
-tower-service = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
 
 [features]
 grpc = ["prost", "tonic"]
-server = ["jsonrpsee/server", "tower-service"]
+server = ["jsonrpsee/server"]

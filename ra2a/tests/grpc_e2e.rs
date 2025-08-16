@@ -3,9 +3,9 @@
 mod tests {
     use ra2a::agent::{AgentBuilder, NoopAgentHandler};
     use ra2a::client::grpc::A2AGrpcClient;
-    use ra2a::core::A2A;
     use ra2a::core::message::{Message, SendMessageRequest, SendMessageResponsePayload};
     use ra2a::core::role::Role;
+    use ra2a::core::{Transport, A2A};
     use std::net::SocketAddr;
 
     #[tokio::test]
@@ -25,6 +25,8 @@ mod tests {
             .with_grpc_server("127.0.0.1:50051".parse::<SocketAddr>().unwrap())
             .build()
             .unwrap();
+        assert_eq!(agent.supported_transports(), vec![Transport::Grpc]);
+
         let (tx, rx) = tokio::sync::oneshot::channel::<()>();
 
         let serve = agent
