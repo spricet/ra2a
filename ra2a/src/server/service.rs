@@ -1,7 +1,6 @@
-use crate::agent::Agent;
+use crate::agent::A2ADelegate;
+use crate::core::Transport;
 use crate::server::A2AServerError;
-use crate::server::delegate::A2ADelegate;
-use futures::try_join;
 use std::net::SocketAddr;
 use tokio::sync::broadcast::Sender;
 
@@ -14,9 +13,9 @@ pub struct A2AServer {
 }
 
 impl A2AServer {
-    pub fn new<A: Agent + 'static>(agent: A) -> Self {
+    pub fn new(delegate: A2ADelegate) -> Self {
         A2AServer {
-            delegate: A2ADelegate::new(agent),
+            delegate,
             #[cfg(feature = "grpc")]
             grpc: None,
             jsonrpc: None,
@@ -40,35 +39,46 @@ impl A2AServer {
         self
     }
 
-    pub async fn serve_with_shutdown<F: Future<Output = ()>>(
+    pub fn enabled_transports(&self) -> Vec<Transport> {
+        let mut transports = Vec::new();
+        #[cfg(feature = "grpc")]
+        if self.grpc.is_some() {
+            transports.push(Transport::Grpc);
+        }
+        if self.jsonrpc.is_some() {
+            transports.push(Transport::JsonRpc);
+        }
+        transports
+    }
+
+    pub async fn serve_with_shutdown<F: Future<Output=()>>(
         self,
         signal: F,
     ) -> Result<(), A2AServerError> {
         let (tx, _rx) = tokio::sync::broadcast::channel(1);
         tokio::select! {
-            _ = self.serve_all(&tx) => {
-                // ending by themselves
-            }
+            res = self.serve_all(&tx) => res,
             _ = signal => {
                 let _ = tx.send(());
+                Ok(())
             }
         }
-        Ok(())
     }
 
     async fn serve_all(&self, tx: &Sender<()>) -> Result<(), A2AServerError> {
-        let _ = try_join!(self.serve_grpc(tx), self.serve_jsonrpc(tx));
-        Ok(())
+        let futs = self
+            .enabled_transports()
+            .into_iter()
+            .map(|t| self.serve_transport(t, tx));
+        futures::future::try_join_all(futs).await.map(|_| ())
     }
 
     async fn serve_grpc(&self, tx: &Sender<()>) -> Result<(), A2AServerError> {
         #[cfg(feature = "grpc")]
-        {
-            if let Some(grpc) = &self.grpc {
-                let mut rx = tx.subscribe();
-                grpc.serve(async { rx.recv().await.unwrap_or_default() })
-                    .await?;
-            }
+        if let Some(grpc) = &self.grpc {
+            let mut rx = tx.subscribe();
+            grpc.serve(async { rx.recv().await.unwrap_or_default() })
+                .await?;
         }
         Ok(())
     }
@@ -81,5 +91,16 @@ impl A2AServer {
                 .await?;
         }
         Ok(())
+    }
+
+    async fn serve_transport(
+        &self,
+        transport: Transport,
+        tx: &Sender<()>,
+    ) -> Result<(), A2AServerError> {
+        match transport {
+            Transport::Grpc => self.serve_grpc(tx).await,
+            Transport::JsonRpc => self.serve_jsonrpc(tx).await,
+        }
     }
 }

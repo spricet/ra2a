@@ -8,12 +8,11 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::server::delegate::A2ADelegate;
+use crate::agent::A2ADelegate;
 use tonic::body::Body;
 use tonic::codegen::Service;
 use tonic::{
     Request, Response, Status,
-    codec::CompressionEncoding,
     server::{Grpc, NamedService, UnaryService},
 };
 use tonic_prost::ProstCodec;
@@ -37,18 +36,17 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
     }
 
     fn call(&mut self, req: HttpRequest<Body>) -> Self::Future {
-        let svc = SendMessage {
-            delegate: self.delegate.clone(),
-        };
+        let delegate = self.delegate.clone();
         Box::pin(async move {
             match req.uri().path() {
                 GRPC_SEND_MESSAGE_PATH => {
                     let mut grpc =
                         Grpc::new(ProstCodec::<SendMessageResponse, SendMessageRequest>::default())
-                            .accept_compressed(CompressionEncoding::Gzip)
-                            .send_compressed(CompressionEncoding::Gzip)
+                            // .accept_compressed(CompressionEncoding::Gzip)
+                            // .send_compressed(CompressionEncoding::Gzip)
                             .max_decoding_message_size(4 * 1024 * 1024)
                             .max_encoding_message_size(4 * 1024 * 1024);
+                    let svc = SendMessage { delegate };
                     let res = grpc.unary(svc, req).await;
                     Ok(res)
                 }

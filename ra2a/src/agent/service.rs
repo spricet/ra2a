@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use std::fmt::Debug;
 
 #[async_trait]
-pub trait Agent: Debug + Send + Sync {
+pub trait AgentHandler: Debug + Send + Sync {
     async fn handle_message(
         &self,
         message: Message,
@@ -16,10 +16,10 @@ pub trait Agent: Debug + Send + Sync {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct NoopAgent;
+pub struct NoopAgentHandler;
 
 #[async_trait]
-impl Agent for NoopAgent {
+impl AgentHandler for NoopAgentHandler {
     async fn handle_message(
         &self,
         message: Message,

@@ -1,14 +1,12 @@
 #[cfg(test)]
 #[cfg(feature = "grpc")]
 mod tests {
-    use ra2a::agent::NoopAgent;
+    use ra2a::agent::{AgentBuilder, NoopAgentHandler};
     use ra2a::client::grpc::A2AGrpcClient;
     use ra2a::core::A2A;
     use ra2a::core::message::{Message, SendMessageRequest, SendMessageResponsePayload};
     use ra2a::core::role::Role;
-    use ra2a::server::A2AServer;
     use std::net::SocketAddr;
-    use std::str::FromStr;
 
     #[tokio::test]
     async fn test_send_message() {
@@ -22,11 +20,15 @@ mod tests {
             extensions: vec![],
         };
 
-        let server =
-            A2AServer::new(NoopAgent).with_grpc(SocketAddr::from_str("127.0.0.1:50051").unwrap());
+        let agent = AgentBuilder::new(NoopAgentHandler)
+            .with_name("test")
+            .with_grpc_server("127.0.0.1:50051".parse::<SocketAddr>().unwrap())
+            .build()
+            .unwrap();
         let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-        let serve = server
-            .serve_with_shutdown(async { rx.await.expect("unexpected server shutdown signal") });
+
+        let serve = agent
+            .serve_with_shutdown(async { rx.await.expect("unexpected agent shutdown signal") });
         let test = async {
             let client = A2AGrpcClient::new("http://localhost:50051").await.unwrap();
             let res = client

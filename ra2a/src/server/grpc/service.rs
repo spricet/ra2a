@@ -1,5 +1,5 @@
+use crate::agent::A2ADelegate;
 use crate::server::A2AServerError;
-use crate::server::delegate::A2ADelegate;
 use crate::server::grpc::A2AGrpc;
 use std::net::SocketAddr;
 use tonic::transport::Server;

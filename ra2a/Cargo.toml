@@ -24,10 +24,11 @@ time = { workspace = true }
 tokio = { workspace = true, features = ["macros", "signal"] }
 tonic = { workspace = true, optional = true }
 tonic-prost = { workspace = true, optional = true }
+tower-service = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
 
 [features]
 grpc = ["prost", "tonic"]
-server = ["jsonrpsee/server"]
+server = ["jsonrpsee/server", "tower-service"]

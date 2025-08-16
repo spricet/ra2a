@@ -1,6 +1,6 @@
+use crate::agent::A2ADelegate;
 use crate::core::{A2A, JSONRPC_SEND_MESSAGE_METHOD};
 use crate::server::A2AServerError;
-use crate::server::delegate::A2ADelegate;
 use jsonrpsee::RpcModule;
 use jsonrpsee::server::Server;
 use jsonrpsee::types::ErrorObjectOwned;

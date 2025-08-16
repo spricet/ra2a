@@ -1,16 +1,21 @@
 #[cfg(test)]
 #[cfg(feature = "server")]
 mod tests {
-    use ra2a::agent::NoopAgent;
-    use ra2a::server::A2AServer;
+    use ra2a::agent::{AgentBuilder, NoopAgentHandler};
+    use std::net::SocketAddr;
 
     #[tokio::test]
     async fn basic_execution() {
-        let server = A2AServer::new(NoopAgent).with_jsonrpc("127.0.0.1:50123".parse().unwrap());
+        let agent_builder = AgentBuilder::new(NoopAgentHandler)
+            .with_name("test")
+            .with_json_rpc_server("127.0.0.1:50123".parse::<SocketAddr>().unwrap());
         #[cfg(feature = "grpc")]
-        let server = server.with_grpc("127.0.0.1:50124".parse().unwrap());
+        let agent_builder =
+            agent_builder.with_grpc_server("127.0.0.1:50124".parse::<SocketAddr>().unwrap());
+        let agent = agent_builder.build().expect("failed to build agent");
+
         let (tx, rx) = tokio::sync::oneshot::channel::<()>();
-        let serve = server
+        let serve = agent
             .serve_with_shutdown(async { rx.await.expect("unexpected server shutdown signal") });
         let handle = tokio::task::spawn(serve);
 

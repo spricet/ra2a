@@ -20,5 +20,6 @@ serde_json = { version = "1" }
 thiserror = { version = "2" }
 time = { version = "0.3", features = ["formatting", "parsing"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
-tonic = { version = "0.14", features = ["gzip"] }
+tonic = { version = "0.14" }
 tonic-prost = { version = "0.14" }
+tower-service = { version = "0.3" }

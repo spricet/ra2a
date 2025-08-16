@@ -1,12 +1,12 @@
-use crate::agent::Agent;
+use crate::agent::AgentHandler;
 use crate::core::message::{SendMessageRequest, SendMessageResponse, SendMessageResponsePayload};
-use crate::core::{A2AError, A2ATransportError, A2A};
+use crate::core::{A2A, A2AError, A2ATransportError};
 use std::fmt::Debug;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct A2ADelegate {
-    agent: Arc<dyn Agent>,
+    agent: Arc<dyn AgentHandler>,
 }
 
 impl Debug for A2ADelegate {
@@ -48,9 +48,7 @@ impl A2A for A2ADelegate {
 }
 
 impl A2ADelegate {
-    pub fn new<T: Agent + 'static>(agent: T) -> Self {
-        A2ADelegate {
-            agent: Arc::new(agent),
-        }
+    pub fn new<T: AgentHandler + 'static>(agent: Arc<T>) -> Self {
+        A2ADelegate { agent }
     }
 }
