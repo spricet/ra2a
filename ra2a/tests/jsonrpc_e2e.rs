@@ -11,9 +11,9 @@ mod tests {
     #[tokio::test]
     async fn test_send_message() {
         let test_message = Message {
-            message_id: "stuff yo".to_string(),
-            context_id: "context".to_string(),
-            task_id: "task".to_string(),
+            message_id: String::new(),
+            context_id: String::new(),
+            task_id: String::new(),
             role: Role::Agent.into(),
             content: vec![],
             metadata: None,

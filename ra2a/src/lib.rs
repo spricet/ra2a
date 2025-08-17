@@ -6,4 +6,8 @@ pub mod broker;
 pub mod client;
 pub mod core;
 #[cfg(feature = "agent")]
+pub mod queue;
+#[cfg(feature = "agent")]
 pub mod server;
+#[cfg(feature = "agent")]
+pub mod store;

@@ -10,6 +10,7 @@ use std::{
 
 use crate::agent::A2ADelegate;
 use tonic::body::Body;
+use tonic::codec::CompressionEncoding;
 use tonic::codegen::Service;
 use tonic::{
     Request, Response, Status,
@@ -42,8 +43,8 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
                 GRPC_SEND_MESSAGE_PATH => {
                     let mut grpc =
                         Grpc::new(ProstCodec::<SendMessageResponse, SendMessageRequest>::default())
-                            // .accept_compressed(CompressionEncoding::Gzip)
-                            // .send_compressed(CompressionEncoding::Gzip)
+                            .accept_compressed(CompressionEncoding::Gzip)
+                            .send_compressed(CompressionEncoding::Gzip)
                             .max_decoding_message_size(4 * 1024 * 1024)
                             .max_encoding_message_size(4 * 1024 * 1024);
                     let svc = SendMessage { delegate };

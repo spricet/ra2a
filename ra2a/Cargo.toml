@@ -6,6 +6,7 @@ edition = "2024"
 
 [dependencies]
 async-trait = { workspace = true }
+async-channel = { workspace = true, optional = true }
 bytes = { workspace = true }
 chrono = { workspace = true }
 derive_builder = { workspace = true }
@@ -21,10 +22,11 @@ time = { workspace = true }
 tokio = { workspace = true, features = ["macros", "signal"] }
 tonic = { workspace = true, optional = true }
 tonic-prost = { workspace = true, optional = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
 
 [features]
 grpc = ["prost", "tonic"]
-agent = ["jsonrpsee/server"]
+agent = ["jsonrpsee/server", "async-channel"]

@@ -3,6 +3,7 @@ use crate::core::message::Message;
 use crate::core::util::{Object, iso8601_timestamp_opt};
 use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// Task is the core unit of action for A2A. It has a current status
 /// and when results are created for the task they are stored in the
@@ -84,4 +85,21 @@ pub struct TaskStatus {
     #[serde(with = "iso8601_timestamp_opt")]
     #[cfg_attr(feature = "grpc", prost(message, tag = "3"))]
     pub timestamp: Option<Timestamp>,
+}
+
+impl Task {
+    pub fn new() -> Self {
+        Self::new_with_id(Uuid::new_v4().to_string())
+    }
+
+    pub fn new_with_id(id: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            context_id: Uuid::new_v4().to_string(),
+            task_status: None,
+            artifacts: vec![],
+            history: vec![],
+            metadata: None,
+        }
+    }
 }

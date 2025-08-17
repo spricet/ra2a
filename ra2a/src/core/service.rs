@@ -1,6 +1,7 @@
 use crate::core::A2AError;
 use crate::core::message::{SendMessageRequest, SendMessageResponse};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 pub const GRPC_SERVICE_NAME: &str = "a2a.v1.A2AService";
 pub const GRPC_SEND_MESSAGE_PATH: &str = "/a2a.v1.A2AService/SendMessage";
@@ -18,4 +19,13 @@ pub trait A2A {
         &self,
         request: SendMessageRequest,
     ) -> Result<SendMessageResponse, A2AError>;
+}
+
+impl Display for Transport {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Transport::Grpc => write!(f, "grpc"),
+            Transport::JsonRpc => write!(f, "json-rpc"),
+        }
+    }
 }

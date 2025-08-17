@@ -27,7 +27,15 @@ pub enum A2AError {
 
     #[cfg(feature = "agent")]
     #[error(transparent)]
+    Queue(#[from] crate::queue::TaskQueueError),
+
+    #[cfg(feature = "agent")]
+    #[error(transparent)]
     Server(#[from] crate::server::A2AServerError),
+
+    #[cfg(feature = "agent")]
+    #[error(transparent)]
+    TaskStore(#[from] crate::store::TaskStoreError),
 }
 
 #[derive(Debug, Error)]

@@ -11,11 +11,11 @@ let agent = AgentBuilder::new(YourAgentHandler)
     .with_grpc_server("[::]:0".parse()?)
     .build()?;
 
-let server = agent.start_server().await?;
-if let Some(addr) = server.local_addr(Transport::Grpc) {
-    println ! ("Running GRPC server on {}", addr);
+let handle = agent.start_server().await?;
+for (transport, addr) in handle.local_addrs().into_iter() {
+    println!("Running {transport} server on {addr}");
 }
 
-server.join().await?;
+handle.join().await?;
 
 ```

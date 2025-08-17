@@ -11,7 +11,7 @@ pub trait AgentHandler: Debug + Send + Sync {
         &self,
         message: Message,
         metadata: Option<Object>,
-        task: Option<Task>,
+        task: Task,
     ) -> Result<SendMessageResponsePayload, A2AAgentError>;
 }
 
@@ -24,7 +24,7 @@ impl AgentHandler for NoopAgentHandler {
         &self,
         message: Message,
         _metadata: Option<Object>,
-        _task: Option<Task>,
+        _task: Task,
     ) -> Result<SendMessageResponsePayload, A2AAgentError> {
         Ok(SendMessageResponsePayload::Message(message))
     }
