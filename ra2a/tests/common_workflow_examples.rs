@@ -3,13 +3,13 @@
 mod basic_execution {
     use indoc::indoc;
     use ra2a::agent::{A2AAgentError, AgentBuilder, AgentHandler};
-    use ra2a::client::grpc::A2AGrpcClient;
+    use ra2a::client::A2AClient;
+    use ra2a::core::A2A;
     use ra2a::core::artifact::Artifact;
     use ra2a::core::message::{Message, SendMessageRequest, SendMessageResponsePayload};
     use ra2a::core::part::{Part, PartBase};
     use ra2a::core::task::{Task, TaskState, TaskStatus};
     use ra2a::core::util::Object;
-    use ra2a::core::{A2A, Transport};
     use std::net::SocketAddr;
 
     #[derive(Debug, Default)]
@@ -64,13 +64,17 @@ mod basic_execution {
 
         let handle = agent.start_server().await.expect("failed to start server");
 
-        let client = A2AGrpcClient::new(format!(
-            "http://localhost:{}",
-            handle.local_addr(Transport::Grpc).unwrap().port()
-        ))
-        .await
-        .unwrap();
-        let message = indoc! {r#"
+        for transport in agent.supported_transports().into_iter() {
+            let client = A2AClient::new(
+                transport,
+                format!(
+                    "http://localhost:{}",
+                    handle.local_addr(transport).unwrap().port()
+                ),
+            )
+            .await
+            .unwrap();
+            let message = indoc! {r#"
           {
             "role": "user",
             "parts": [
@@ -82,17 +86,17 @@ mod basic_execution {
             "messageId": "9229e770-767c-417b-a0b0-f0741243c589"
           }
         "#};
-        let message = serde_json::from_str::<Message>(message).unwrap();
-        let res = client
-            .send_message(SendMessageRequest {
-                message: Some(message),
-                configuration: None,
-                metadata: None,
-            })
-            .await
-            .unwrap();
+            let message = serde_json::from_str::<Message>(message).unwrap();
+            let res = client
+                .send_message(SendMessageRequest {
+                    message: Some(message),
+                    configuration: None,
+                    metadata: None,
+                })
+                .await
+                .unwrap();
 
-        let expected = indoc! {r#"
+            let expected = indoc! {r#"
           {
              "id": "363422be-b0f9-4692-a24d-278670e7c7f1",
              "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
@@ -129,10 +133,9 @@ mod basic_execution {
              "metadata": {}
           }
         "#};
-        let expected = serde_json::from_str::<SendMessageResponsePayload>(expected).unwrap();
-
-        assert_eq!(res.payload.unwrap(), expected);
-
+            let expected = serde_json::from_str::<SendMessageResponsePayload>(expected).unwrap();
+            assert_eq!(res.payload.unwrap(), expected);
+        }
         handle.shutdown().await.unwrap()
     }
 }
