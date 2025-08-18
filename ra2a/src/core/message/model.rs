@@ -1,5 +1,5 @@
 use crate::core::A2AError;
-use crate::core::part::Part;
+use crate::core::part::{Part, PartBase};
 use crate::core::push_notification::PushNotificationConfig;
 #[cfg(feature = "grpc")]
 use crate::core::role::Role;
@@ -120,6 +120,20 @@ pub enum SendMessageResponsePayload {
 }
 
 impl Message {
+    pub fn new_simple(text: impl Into<String>) -> Self {
+        Self {
+            message_id: String::new(),
+            context_id: None,
+            task_id: None,
+            role: Role::User.into(),
+            parts: vec![Part {
+                part: Some(PartBase::Text(text.into())),
+            }],
+            metadata: None,
+            extensions: vec![],
+        }
+    }
+
     pub fn as_role(&self) -> Result<Role, A2AError> {
         Role::try_from(self.role).map_err(|_| A2AError::InvalidRoleCode(self.role))
     }

@@ -1,9 +1,12 @@
 use crate::agent::A2ADelegate;
-use crate::core::{A2A, JSONRPC_SEND_MESSAGE_METHOD};
+use crate::core::task::Task;
+use crate::core::{
+    A2A, A2AError, A2AProtocolError, JSONRPC_GET_TASK_METHOD, JSONRPC_SEND_MESSAGE_METHOD,
+};
 use crate::server::A2AServerError;
 use jsonrpsee::RpcModule;
 use jsonrpsee::server::Server;
-use jsonrpsee::types::ErrorObjectOwned;
+use jsonrpsee::types::{ErrorObject, ErrorObjectOwned};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 
@@ -43,6 +46,15 @@ impl A2AJsonRpcServer {
             let request = params.parse()?;
             let res = ctx.send_message(request).await.unwrap(); // todo handle these errors!!!
             Ok::<_, ErrorObjectOwned>(res)
+        })?;
+        module.register_async_method(JSONRPC_GET_TASK_METHOD, |params, ctx, _| async move {
+            let request = params.parse()?;
+            ctx.get_task(request).await.map_err(|e| match e {
+                A2AError::Protocol(A2AProtocolError::TaskNotFound { id, code }) => {
+                    ErrorObject::owned(code as i32, format!("Task not found: {id}"), None::<String>)
+                }
+                _ => ErrorObject::owned(-32000, format!("{e:?}"), None::<String>), // todo clean this up
+            })
         })?;
         let handle = server.start(module);
 

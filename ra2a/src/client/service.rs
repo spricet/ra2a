@@ -1,6 +1,7 @@
 use crate::client::A2AClientError;
 use crate::client::jsonrpc::A2AJsonRpcClient;
 use crate::core::message::{SendMessageRequest, SendMessageResponse};
+use crate::core::task::{GetTaskRequest, Task};
 use crate::core::{A2A, A2AError, Transport};
 use async_trait::async_trait;
 
@@ -34,6 +35,14 @@ impl A2A for A2AClient {
             A2AClient::JsonRpc(c) => c.send_message(request).await,
             #[cfg(feature = "grpc")]
             A2AClient::Grpc(c) => c.send_message(request).await,
+        }
+    }
+
+    async fn get_task(&self, request: GetTaskRequest) -> Result<Task, A2AError> {
+        match self {
+            A2AClient::JsonRpc(c) => c.get_task(request).await,
+            #[cfg(feature = "grpc")]
+            A2AClient::Grpc(c) => c.get_task(request).await,
         }
     }
 }

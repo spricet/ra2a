@@ -1,8 +1,15 @@
 use crate::core::artifact::Artifact;
 use crate::core::message::Message;
 use crate::core::util::{Object, i32_task_state_serde, iso8601_timestamp_opt};
+use bytes::{Buf, BufMut};
+use jsonrpsee::core::to_json_raw_value;
+use jsonrpsee::core::traits::ToRpcParams;
+use prost::DecodeError;
+use prost::encoding::{DecodeContext, WireType};
 use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
+use serde_json::Error;
+use serde_json::value::RawValue;
 use uuid::Uuid;
 
 /// Task is the core unit of action for A2A. It has a current status
@@ -95,6 +102,53 @@ pub struct TaskStatus {
     pub timestamp: Option<Timestamp>,
 }
 
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetTaskRequest {
+    pub id: String,
+    pub history_length: Option<i32>,
+    pub metadata: Option<Object>,
+}
+
+#[derive(Clone, PartialEq)]
+#[cfg_attr(feature = "grpc", derive(prost::Message))]
+pub struct GetTaskGrpcRequest {
+    #[cfg_attr(feature = "grpc", prost(string, tag = "1"))]
+    pub name: String, // follows the form 'task/{id}'
+    #[cfg_attr(feature = "grpc", prost(optional, int32, tag = "2"))]
+    pub history_length: Option<i32>,
+}
+
+impl From<GetTaskGrpcRequest> for GetTaskRequest {
+    fn from(value: GetTaskGrpcRequest) -> Self {
+        Self {
+            id: value
+                .name
+                .clone()
+                .strip_prefix("task/")
+                .unwrap_or(&value.name)
+                .to_string(),
+            history_length: value.history_length,
+            metadata: None,
+        }
+    }
+}
+
+impl From<GetTaskRequest> for GetTaskGrpcRequest {
+    fn from(value: GetTaskRequest) -> Self {
+        Self {
+            name: format!("task/{}", value.id),
+            history_length: value.history_length,
+        }
+    }
+}
+
+impl ToRpcParams for GetTaskRequest {
+    fn to_rpc_params(self) -> Result<Option<Box<RawValue>>, Error> {
+        to_json_raw_value(&self).map(Some)
+    }
+}
+
 impl Task {
     pub fn new() -> Self {
         Self::new_with_id(Uuid::new_v4().to_string())
@@ -109,5 +163,21 @@ impl Task {
             history: vec![],
             metadata: None,
         }
+    }
+}
+
+impl TaskStatus {
+    pub fn default_submitted() -> Self {
+        Self {
+            state: TaskState::Submitted.into(),
+            message: None,
+            timestamp: None,
+        }
+    }
+}
+
+impl TaskState {
+    pub fn into_i32(self) -> i32 {
+        self.into()
     }
 }

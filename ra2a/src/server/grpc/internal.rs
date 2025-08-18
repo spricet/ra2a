@@ -1,5 +1,7 @@
 use crate::core::message::{SendMessageRequest, SendMessageResponse};
-use crate::core::{A2A, GRPC_SEND_MESSAGE_PATH, GRPC_SERVICE_NAME};
+use crate::core::{
+    A2A, A2AError, A2AProtocolError, GRPC_GET_TASK_PATH, GRPC_SEND_MESSAGE_PATH, GRPC_SERVICE_NAME,
+};
 use http::{Request as HttpRequest, Response as HttpResponse};
 use std::{
     convert::Infallible,
@@ -9,6 +11,7 @@ use std::{
 };
 
 use crate::agent::A2ADelegate;
+use crate::core::task::{GetTaskGrpcRequest, Task};
 use tonic::body::Body;
 use tonic::codec::CompressionEncoding;
 use tonic::codegen::Service;
@@ -51,6 +54,17 @@ impl Service<HttpRequest<Body>> for A2AGrpc {
                     let res = grpc.unary(svc, req).await;
                     Ok(res)
                 }
+                GRPC_GET_TASK_PATH => {
+                    // todo clean up this and expose tuning
+                    let mut grpc = Grpc::new(ProstCodec::<Task, GetTaskGrpcRequest>::default())
+                        .accept_compressed(CompressionEncoding::Gzip)
+                        .send_compressed(CompressionEncoding::Gzip)
+                        .max_decoding_message_size(4 * 1024 * 1024)
+                        .max_encoding_message_size(4 * 1024 * 1024);
+                    let svc = GetTask { delegate };
+                    let res = grpc.unary(svc, req).await;
+                    Ok(res)
+                }
                 _ => Ok(Status::unimplemented("unknown method").into_http()),
             }
         })
@@ -75,6 +89,33 @@ impl UnaryService<SendMessageRequest> for SendMessage {
             let res = delegate.send_message(req).await;
             match res {
                 Ok(response) => Ok(Response::new(response)),
+                Err(e) => Err(Status::internal(e.to_string())),
+            }
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct GetTask {
+    delegate: A2ADelegate,
+}
+
+impl UnaryService<GetTaskGrpcRequest> for GetTask {
+    type Response = Task;
+    type Future = BoxFut<Result<Response<Self::Response>, Status>>;
+
+    fn call(&mut self, request: Request<GetTaskGrpcRequest>) -> Self::Future {
+        let req = request.into_inner();
+        let delegate = self.delegate.clone();
+        Box::pin(async move {
+            let res = delegate.get_task(req.into()).await;
+            match res {
+                Ok(response) => Ok(Response::new(response)),
+                Err(A2AError::Protocol(A2AProtocolError::TaskNotFound { id, code })) => {
+                    let mut status = Status::not_found(format!("Task not found: {}", id));
+                    status.metadata_mut().insert("code", code.into());
+                    Err(status)
+                }
                 Err(e) => Err(Status::internal(e.to_string())),
             }
         })

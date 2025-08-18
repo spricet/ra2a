@@ -2,7 +2,7 @@ use crate::agent::AgentHandler;
 use crate::core::message::{
     SendMessageConfiguration, SendMessageRequest, SendMessageResponse, SendMessageResponsePayload,
 };
-use crate::core::task::{Task, TaskState, TaskStatus};
+use crate::core::task::{GetTaskRequest, Task, TaskState, TaskStatus};
 use crate::core::{A2A, A2AError, A2AProtocolError, A2ATransportError};
 use crate::queue::TaskQueue;
 use crate::queue::bounded::BoundedTaskQueue;
@@ -37,6 +37,8 @@ impl A2A for A2ADelegate {
         };
         // ensures server owns the message_id
         message.message_id = Uuid::new_v4().to_string();
+        // todo context ids should be validated to ensure user doesn't put wierd stuff in them
+        // todo actually all things should be validated
 
         let configuration = request
             .configuration
@@ -92,6 +94,16 @@ impl A2A for A2ADelegate {
         Ok(SendMessageResponse {
             payload: Some(payload),
         })
+    }
+
+    async fn get_task(&self, request: GetTaskRequest) -> Result<Task, A2AError> {
+        let task = self.store.fetch(&request.id).await?;
+        match task {
+            Some(task) => Ok(task),
+            None => Err(A2AError::Protocol(A2AProtocolError::task_not_found(
+                request.id,
+            ))),
+        }
     }
 }
 

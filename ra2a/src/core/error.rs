@@ -1,7 +1,10 @@
 use jsonrpsee::core::ClientError;
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use thiserror::Error;
+use tonic::Code;
 
+#[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum A2AErrorCode {
     TaskNotFound = -32001,
@@ -149,5 +152,18 @@ impl From<ClientError> for A2AError {
             todo!("this probably encapsulates the protocol error, so we should parse it");
         }
         Self::Transport(A2ATransportError::JsonRpc(value))
+    }
+}
+
+impl Display for A2AErrorCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", *self as i32)
+    }
+}
+
+#[cfg(feature = "grpc")]
+impl From<A2AErrorCode> for tonic::metadata::MetadataValue<tonic::metadata::Ascii> {
+    fn from(value: A2AErrorCode) -> Self {
+        value.to_string().parse().unwrap()
     }
 }
