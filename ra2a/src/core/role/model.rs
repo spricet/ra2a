@@ -11,3 +11,16 @@ pub enum Role {
     /// Refers to communication from the server to the client.
     Agent = 2,
 }
+
+impl Role {
+    pub fn unspecified_i32() -> i32 {
+        Self::Unspecified.into()
+    }
+
+    pub fn is_unspecified(val: &i32) -> bool {
+        match Role::try_from(*val) {
+            Ok(role) => role == Self::Unspecified,
+            Err(_) => false,
+        }
+    }
+}

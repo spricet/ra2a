@@ -10,6 +10,7 @@ use crate::store::TaskStore;
 use crate::store::memory::InMemoryTaskStore;
 use std::fmt::Debug;
 use std::sync::Arc;
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct A2ADelegate {
@@ -30,10 +31,12 @@ impl A2A for A2ADelegate {
         &self,
         request: SendMessageRequest,
     ) -> Result<SendMessageResponse, A2AError> {
-        let message = match request.message {
+        let mut message = match request.message {
             Some(message) => message,
             None => return Err(A2AError::Transport(A2ATransportError::MissingPayload)),
         };
+        // ensures server owns the message_id
+        message.message_id = Uuid::new_v4().to_string();
 
         let configuration = request
             .configuration

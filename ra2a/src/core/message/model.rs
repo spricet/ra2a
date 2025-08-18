@@ -33,13 +33,17 @@ pub struct Message {
     #[cfg_attr(feature = "grpc", prost(optional, string, tag = "3"))]
     pub task_id: Option<String>,
 
-    #[serde(with = "i32_role_serde")]
+    #[serde(
+        default = "Role::unspecified_i32",
+        with = "i32_role_serde",
+        skip_serializing_if = "Role::is_unspecified"
+    )]
     #[cfg_attr(feature = "grpc", prost(enumeration = "Role", tag = "4"))]
     pub role: i32,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(feature = "grpc", prost(repeated, message, tag = "5"))]
-    pub content: Vec<Part>,
+    pub parts: Vec<Part>,
 
     #[cfg_attr(feature = "grpc", prost(message, tag = "6"))]
     pub metadata: Option<Object>,
