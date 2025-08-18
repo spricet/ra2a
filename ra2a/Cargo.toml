@@ -25,6 +25,7 @@ tonic-prost = { workspace = true, optional = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
+indoc = { workspace = true }
 tokio = { workspace = true }
 
 [features]

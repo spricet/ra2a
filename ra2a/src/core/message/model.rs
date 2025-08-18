@@ -1,9 +1,11 @@
+use crate::core::A2AError;
 use crate::core::part::Part;
 use crate::core::push_notification::PushNotificationConfig;
 #[cfg(feature = "grpc")]
 use crate::core::role::Role;
 use crate::core::task::Task;
 use crate::core::util::Object;
+use crate::core::util::i32_role_serde;
 use jsonrpsee::core::to_json_raw_value;
 use jsonrpsee::core::traits::ToRpcParams;
 use serde::{Deserialize, Serialize};
@@ -25,21 +27,24 @@ pub struct Message {
     #[cfg_attr(feature = "grpc", prost(string, tag = "1"))]
     pub message_id: String,
 
-    #[cfg_attr(feature = "grpc", prost(string, tag = "2"))]
-    pub context_id: String,
+    #[cfg_attr(feature = "grpc", prost(optional, string, tag = "2"))]
+    pub context_id: Option<String>,
 
-    #[cfg_attr(feature = "grpc", prost(string, tag = "3"))]
-    pub task_id: String,
+    #[cfg_attr(feature = "grpc", prost(optional, string, tag = "3"))]
+    pub task_id: Option<String>,
 
+    #[serde(with = "i32_role_serde")]
     #[cfg_attr(feature = "grpc", prost(enumeration = "Role", tag = "4"))]
     pub role: i32,
 
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(feature = "grpc", prost(repeated, message, tag = "5"))]
     pub content: Vec<Part>,
 
     #[cfg_attr(feature = "grpc", prost(message, tag = "6"))]
     pub metadata: Option<Object>,
 
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(feature = "grpc", prost(repeated, string, tag = "7"))]
     pub extensions: Vec<String>,
 }
@@ -99,7 +104,7 @@ pub struct SendMessageResponse {
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase")]
 #[cfg_attr(feature = "grpc", derive(prost::Oneof))]
 #[cfg_attr(not(feature = "grpc"), derive(Debug))]
 pub enum SendMessageResponsePayload {
@@ -108,6 +113,12 @@ pub enum SendMessageResponsePayload {
 
     #[cfg_attr(feature = "grpc", prost(message, tag = "2"))]
     Message(Message),
+}
+
+impl Message {
+    pub fn as_role(&self) -> Result<Role, A2AError> {
+        Role::try_from(self.role).map_err(|_| A2AError::InvalidRoleCode(self.role))
+    }
 }
 
 impl ToRpcParams for SendMessageRequest {

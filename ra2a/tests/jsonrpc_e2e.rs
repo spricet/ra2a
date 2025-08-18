@@ -12,8 +12,8 @@ mod tests {
     async fn test_send_message() {
         let test_message = Message {
             message_id: String::new(),
-            context_id: String::new(),
-            task_id: String::new(),
+            context_id: None,
+            task_id: None,
             role: Role::Agent.into(),
             content: vec![],
             metadata: None,

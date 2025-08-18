@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "grpc", derive(prost::Enumeration))]
+#[serde(rename_all = "lowercase")]
 pub enum Role {
     /// Unspecified role
     Unspecified = 0,

@@ -1,6 +1,6 @@
 use crate::core::artifact::Artifact;
 use crate::core::message::Message;
-use crate::core::util::{Object, iso8601_timestamp_opt};
+use crate::core::util::{Object, i32_task_state_serde, iso8601_timestamp_opt};
 use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -21,7 +21,7 @@ pub struct Task {
     pub context_id: String,
 
     #[cfg_attr(feature = "grpc", prost(message, tag = "3"))]
-    pub task_status: Option<TaskStatus>,
+    pub status: Option<TaskStatus>,
 
     #[cfg_attr(feature = "grpc", prost(repeated, message, tag = "4"))]
     pub artifacts: Vec<Artifact>,
@@ -34,6 +34,7 @@ pub struct Task {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 #[cfg_attr(feature = "grpc", derive(prost::Enumeration))]
 pub enum TaskState {
     /// Unspecified state
@@ -57,6 +58,7 @@ pub enum TaskState {
 
     /// Represents the status that the task requires information to complete.
     /// This is an interrupted state.
+    #[serde(rename = "input-required")]
     InputRequired = 6,
 
     /// Represents the status that the agent has decided to not perform the task.
@@ -67,6 +69,7 @@ pub enum TaskState {
     /// Represents the state that some authentication is needed from the upstream
     /// client. Authentication is expected to come out-of-band thus this is not
     /// an interrupted or terminal state.
+    #[serde(rename = "auth-required")]
     AuthRequired = 8,
 }
 
@@ -76,13 +79,18 @@ pub enum TaskState {
 #[cfg_attr(feature = "grpc", derive(prost::Message))]
 #[cfg_attr(not(feature = "grpc"), derive(Debug))]
 pub struct TaskStatus {
+    #[serde(with = "i32_task_state_serde")]
     #[cfg_attr(feature = "grpc", prost(enumeration = "TaskState", tag = "1"))]
     pub state: i32,
 
     #[cfg_attr(feature = "grpc", prost(message, tag = "2"))]
     pub message: Option<Message>,
 
-    #[serde(with = "iso8601_timestamp_opt")]
+    #[serde(
+        default,
+        with = "iso8601_timestamp_opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     #[cfg_attr(feature = "grpc", prost(message, tag = "3"))]
     pub timestamp: Option<Timestamp>,
 }
@@ -96,7 +104,7 @@ impl Task {
         Self {
             id: id.into(),
             context_id: Uuid::new_v4().to_string(),
-            task_status: None,
+            status: None,
             artifacts: vec![],
             history: vec![],
             metadata: None,

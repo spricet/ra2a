@@ -13,11 +13,11 @@ pub struct Artifact {
     #[cfg_attr(feature = "grpc", prost(string, tag = "1"))]
     pub artifact_id: String,
 
-    #[cfg_attr(feature = "grpc", prost(string, tag = "3"))]
-    pub name: String,
+    #[cfg_attr(feature = "grpc", prost(optional, string, tag = "3"))]
+    pub name: Option<String>,
 
-    #[cfg_attr(feature = "grpc", prost(string, tag = "4"))]
-    pub description: String,
+    #[cfg_attr(feature = "grpc", prost(optional, string, tag = "4"))]
+    pub description: Option<String>,
 
     #[cfg_attr(feature = "grpc", prost(repeated, message, tag = "5"))]
     pub parts: Vec<Part>,
@@ -25,6 +25,7 @@ pub struct Artifact {
     #[cfg_attr(feature = "grpc", prost(message, tag = "6"))]
     pub metadata: Option<Object>,
 
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[cfg_attr(feature = "grpc", prost(repeated, string, tag = "7"))]
     pub extensions: Vec<String>,
 }

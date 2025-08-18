@@ -36,6 +36,9 @@ pub enum A2AError {
     #[cfg(feature = "agent")]
     #[error(transparent)]
     TaskStore(#[from] crate::store::TaskStoreError),
+
+    #[error("invalid role code: {0}")]
+    InvalidRoleCode(i32),
 }
 
 #[derive(Debug, Error)]

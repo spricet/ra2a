@@ -6,15 +6,16 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(not(feature = "grpc"), derive(Debug))]
 pub struct Part {
     #[serde(flatten)]
-    #[cfg_attr(feature = "grpc", prost(oneof = "PartType", tags = "1, 2, 3"))]
-    pub part: Option<PartType>,
+    #[cfg_attr(feature = "grpc", prost(oneof = "PartBase", tags = "1, 2, 3"))]
+    pub part: Option<PartBase>,
 }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "type")]
+#[serde(tag = "kind", rename_all = "lowercase")]
 #[cfg_attr(feature = "grpc", derive(prost::Oneof))]
 #[cfg_attr(not(feature = "grpc"), derive(Debug))]
-pub enum PartType {
+pub enum PartBase {
+    #[serde(with = "text_part_base_interop_serde")]
     #[cfg_attr(feature = "grpc", prost(string, tag = "1"))]
     Text(String),
 
@@ -56,4 +57,31 @@ pub enum File {
 pub struct DataPart {
     #[cfg_attr(feature = "grpc", prost(message, tag = "1"))]
     pub data: Option<Object>,
+}
+
+mod text_part_base_interop_serde {
+    use serde::ser::SerializeStruct;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    #[derive(Deserialize)]
+    struct Wrapper {
+        text: String,
+    }
+
+    pub fn serialize<S>(role: &String, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut s = serializer.serialize_struct("TextPart", 1)?;
+        s.serialize_field("text", role)?;
+        s.end()
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<String, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let Wrapper { text } = Wrapper::deserialize(deserializer)?;
+        Ok(text)
+    }
 }

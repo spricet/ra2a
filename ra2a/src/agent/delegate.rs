@@ -45,16 +45,12 @@ impl A2A for A2ADelegate {
                 blocking: true,
             });
 
-        let task_id = match message.task_id.as_str() {
-            "" => None,
-            _ => Some(message.task_id.clone()),
-        };
-        let mut task = match task_id {
-            Some(task_id) => match self.store.fetch(&task_id).await {
+        let mut task = match &message.task_id {
+            Some(task_id) => match self.store.fetch(task_id).await {
                 Ok(Some(task)) => task,
                 Ok(None) => {
                     return Err(A2AError::Protocol(A2AProtocolError::task_not_found(
-                        task_id,
+                        task_id.clone(),
                     )));
                 }
                 Err(e) => return Err(e.into()),
@@ -69,8 +65,9 @@ impl A2A for A2ADelegate {
                     .handle_message(message, request.metadata, task)
                     .await?;
                 match &payload {
-                    SendMessageResponsePayload::Task(_task) => {
+                    SendMessageResponsePayload::Task(task) => {
                         // persist the task, audit, etc
+                        self.store.upsert(task.clone()).await?;
                     }
                     SendMessageResponsePayload::Message(_message) => {
                         // no task, audit the message
@@ -79,7 +76,7 @@ impl A2A for A2ADelegate {
                 payload
             }
             false => {
-                task.task_status = Some(TaskStatus {
+                task.status = Some(TaskStatus {
                     state: TaskState::Submitted.into(),
                     message: Some(message),
                     timestamp: None,
