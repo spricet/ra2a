@@ -16,7 +16,12 @@ impl MyAgentHandler {
 
 #[async_trait::async_trait]
 impl AgentHandler for MyAgentHandler {
-    async fn handle_message(&self, message: Message, _metadata: Option<Object>, _task: Task) -> Result<SendMessageResponsePayload, A2AAgentError> {
+    async fn handle_message(
+        &self,
+        message: Message,
+        _metadata: Option<Object>,
+        _task: Task,
+    ) -> Result<SendMessageResponsePayload, A2AAgentError> {
         Ok(SendMessageResponsePayload::Message(message))
     }
 }

@@ -40,10 +40,10 @@ impl<A: AgentHandler + 'static> Agent<A> {
         let handle: JoinHandle<Result<(), A2AError>> = tokio::spawn(async move {
             let shutdown = async move {
                 tokio::select! {
-                    _ = tokio::signal::ctrl_c() => {}
-            // Treat either "sent ()" or "sender dropped" as a shutdown signal
-                    _ = rx => {}
-                }
+                        _ = tokio::signal::ctrl_c() => {}
+                // Treat either "sent ()" or "sender dropped" as a shutdown signal
+                        _ = rx => {}
+                    }
             };
 
             server
