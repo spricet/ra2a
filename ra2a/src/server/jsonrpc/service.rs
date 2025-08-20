@@ -1,12 +1,12 @@
 use crate::agent::A2ADelegate;
 use crate::core::task::Task;
 use crate::core::{
-    A2A, A2AError, A2AProtocolError, JSONRPC_GET_TASK_METHOD, JSONRPC_SEND_MESSAGE_METHOD,
+    A2AError, A2AProtocolError, A2A, JSONRPC_GET_TASK_METHOD, JSONRPC_SEND_MESSAGE_METHOD,
 };
 use crate::server::A2AServerError;
-use jsonrpsee::RpcModule;
 use jsonrpsee::server::Server;
 use jsonrpsee::types::{ErrorObject, ErrorObjectOwned};
+use jsonrpsee::RpcModule;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 
@@ -30,7 +30,7 @@ impl A2AJsonRpcServer {
             .map_err(A2AServerError::from)
     }
 
-    pub async fn serve<F: Future<Output = ()>>(
+    pub async fn serve<F: Future<Output=()>>(
         &self,
         signal: F,
         listener: TcpListener,
@@ -59,9 +59,6 @@ impl A2AJsonRpcServer {
         let handle = server.start(module);
 
         tokio::select! {
-            _ = tokio::signal::ctrl_c() => {
-                let _ = handle.stop();
-            }
             _ = signal => {
                 let _ = handle.stop();
             }

@@ -3,8 +3,12 @@ resolver = "2"
 members = ["ra2a"]
 
 [workspace.dependencies]
+anyhow = { version = "1" }
 async-trait = { version = "0.1" }
 async-channel = { version = "2" }
+aws-runtime = { version = "1" }
+aws-config = { version = "1" }
+aws-sdk-bedrockruntime = { version = "1" }
 bytes = { version = "1" }
 chrono = { version = "0.4" }
 derive_builder = { version = "0.20" }
