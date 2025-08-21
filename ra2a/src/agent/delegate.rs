@@ -3,11 +3,11 @@ use crate::core::message::{
     SendMessageConfiguration, SendMessageRequest, SendMessageResponse, SendMessageResponsePayload,
 };
 use crate::core::task::{GetTaskRequest, Task, TaskState, TaskStatus};
-use crate::core::{A2A, A2AError, A2AProtocolError, A2ATransportError};
-use crate::queue::TaskQueue;
+use crate::core::{A2AError, A2AProtocolError, A2ATransportError, A2A};
 use crate::queue::bounded::BoundedTaskQueue;
-use crate::store::TaskStore;
+use crate::queue::TaskQueue;
 use crate::store::memory::InMemoryTaskStore;
+use crate::store::TaskStore;
 use std::fmt::Debug;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -31,6 +31,7 @@ impl A2A for A2ADelegate {
         &self,
         request: SendMessageRequest,
     ) -> Result<SendMessageResponse, A2AError> {
+        tracing::debug!(request = ?request, "send_message");
         let mut message = match request.message {
             Some(message) => message,
             None => return Err(A2AError::Transport(A2ATransportError::MissingPayload)),
